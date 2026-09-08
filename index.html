@@ -473,6 +473,14 @@
     hashtags: { customTags:[], hiddenAuto:[] }
   };
 
+  // ป้องกันปัญหา "ดับเบิลคลิก/คลิกรัวๆ" ที่หมวดหมู่หรือหน่วยงานเดิม แล้วดูเหมือนไม่มีอะไรเกิดขึ้น —
+  // เพราะคลิกแรกเลือกหมวดนั้น (re-render ปุ่มใหม่ทันที) แล้วคลิกที่สองซึ่งมาถึงในเสี้ยววินาที
+  // ไปโดนปุ่มเดิมที่ถูกสร้างใหม่ ตีความเป็น "คลิกซ้ำ" เลยยกเลิกตัวกรองทันที ทำให้เหมือนคลิกไม่ติด
+  // แก้โดย "เมิน" คลิกที่ซ้ำคีย์เดิมภายในเวลาสั้นๆ ให้เหลือผลแค่ครั้งเดียว
+  var DBLCLICK_GUARD_MS = 500;
+  var lastCategoryClick = { key: null, ts: 0 };
+  var lastDeptClick = { key: null, ts: 0 };
+
   function els(){
     return {
       searchInput: document.getElementById("searchInput"),
@@ -673,6 +681,12 @@
     Array.prototype.forEach.call(E.categoryList.querySelectorAll(".cat-item"), function(btn){
       btn.addEventListener("click", function(){
         var key = btn.getAttribute("data-key");
+        var now = Date.now();
+        if (lastCategoryClick.key === key && (now - lastCategoryClick.ts) < DBLCLICK_GUARD_MS){
+          lastCategoryClick.ts = now;
+          return; // คลิกซ้ำในเวลาสั้นๆ ที่หมวดเดิม — เมินไป ไม่ให้ยกเลิกตัวกรองที่เพิ่งเลือก
+        }
+        lastCategoryClick = { key: key, ts: now };
         state.activeCategory = (String(state.activeCategory) === key) ? null : key;
         render();
       });
@@ -688,6 +702,12 @@
     Array.prototype.forEach.call(E.deptChips.querySelectorAll(".chip"), function(btn){
       btn.addEventListener("click", function(){
         var dept = btn.getAttribute("data-dept");
+        var now = Date.now();
+        if (lastDeptClick.key === dept && (now - lastDeptClick.ts) < DBLCLICK_GUARD_MS){
+          lastDeptClick.ts = now;
+          return;
+        }
+        lastDeptClick = { key: dept, ts: now };
         state.activeDept = (state.activeDept === dept) ? null : dept;
         render();
       });
