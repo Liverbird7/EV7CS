@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EV7 Knowledge Box</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper:#F5F6F4;
+    --surface:#FFFFFF;
+    --surface-2:#EEF1EE;
+    --ink:#17212B;
+    --ink-dim:#57626C;
+    --line:#DCE1DE;
+    --accent:#0F8B6C;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E4F3EE;
+    --info:#2563A6;
+    --info-soft:#E7F0F9;
+    --warn:#B5651D;
+    --warn-soft:#FBEEE0;
+    --danger:#B3261E;
+    --danger-soft:#FBEAE9;
+    --shadow:rgba(23,33,43,0.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#11161C; --surface:#171E26; --surface-2:#1E2830;
+      --ink:#E7ECEF; --ink-dim:#9AA7B0; --line:#2B363F;
+      --accent:#2FBF93; --accent-ink:#08211A; --accent-soft:#163229;
+      --info:#6FA8E0; --info-soft:#17293B;
+      --warn:#E0A458; --warn-soft:#3A2A15;
+      --danger:#E5867E; --danger-soft:#3A1D1B;
+      --shadow:rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#11161C; --surface:#171E26; --surface-2:#1E2830;
+    --ink:#E7ECEF; --ink-dim:#9AA7B0; --line:#2B363F;
+    --accent:#2FBF93; --accent-ink:#08211A; --accent-soft:#163229;
+    --info:#6FA8E0; --info-soft:#17293B;
+    --warn:#E0A458; --warn-soft:#3A2A15;
+    --danger:#E5867E; --danger-soft:#3A1D1B;
+    --shadow:rgba(0,0,0,0.45);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans Thai','IBM Plex Sans',system-ui,sans-serif;
+    font-size:14px;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Bai Jamjuree','Noto Sans Thai',sans-serif; text-wrap:balance; margin:0;}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,monospace; font-variant-numeric:tabular-nums;}
+  button{font:inherit; color:inherit;}
+  :focus-visible{outline:2px solid var(--info); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;} }
+
+  .app{max-width:1400px; margin:0 auto; padding:20px 24px 40px;}
+
+  .topbar{
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:16px;
+  }
+  .brand{display:flex; align-items:baseline; gap:8px; flex-shrink:0;}
+  .brand-mark{
+    font-family:'Bai Jamjuree',sans-serif; font-weight:700; font-size:20px;
+    background:var(--accent); color:var(--accent-ink); padding:3px 9px; border-radius:6px;
+    letter-spacing:0.02em;
+  }
+  .brand-name{font-family:'Bai Jamjuree',sans-serif; font-weight:600; font-size:19px;}
+  .search-wrap{flex:1 1 320px; min-width:220px; position:relative;}
+  .search-wrap input{
+    width:100%; padding:10px 14px 10px 38px; border-radius:9px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); font-size:14px; font-family:inherit;
+  }
+  .search-wrap input::placeholder{color:var(--ink-dim);}
+  .search-wrap svg{position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.55;}
+  .sync-pill{
+    display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-dim);
+    padding:6px 12px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line);
+    flex-shrink:0; white-space:nowrap;
+  }
+  .sync-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-dim); flex-shrink:0;}
+  .sync-pill[data-state="live"] .sync-dot{background:var(--accent); box-shadow:0 0 0 3px var(--accent-soft);}
+  .sync-pill[data-state="error"] .sync-dot{background:var(--danger); box-shadow:0 0 0 3px var(--danger-soft);}
+  .sync-pill[data-state="loading"] .sync-dot{background:var(--info); animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:0.35;}}
+
+  .tag-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px;}
+  .tag-chip{
+    font-size:12px; padding:5px 10px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); cursor:pointer; color:var(--info); font-family:inherit;
+  }
+  .tag-chip:hover{background:var(--info-soft); border-color:var(--info);}
+  .tag-chip.active{background:var(--info); border-color:var(--info); color:var(--accent-ink); font-weight:600;}
+
+  .stats-row{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px;}
+  @media (max-width:860px){ .stats-row{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  .stat-tile{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:4px; box-shadow:0 1px 2px var(--shadow);
+    cursor:pointer; text-align:left; font:inherit; color:inherit; width:100%;
+    transition:border-color .12s ease, transform .12s ease;
+  }
+  .stat-tile:hover{border-color:var(--info); transform:translateY(-1px);}
+  .stat-tile:active{transform:translateY(0);}
+  .stat-tile .num{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:26px; font-variant-numeric:tabular-nums;}
+  .stat-tile .label{font-size:12.5px; color:var(--ink-dim);}
+  .stat-tile.accent .num{color:var(--accent);}
+  .stat-tile.warn .num{color:var(--warn);}
+  .filter-group.flash{animation:flashHighlight 1s ease;}
+  @keyframes flashHighlight{
+    0%{box-shadow:0 0 0 3px var(--info-soft); border-radius:10px;}
+    100%{box-shadow:0 0 0 0 transparent;}
+  }
+
+  .layout{display:grid; grid-template-columns:230px minmax(0,1fr) 360px; gap:18px; align-items:start;}
+
+  .sidebar{display:flex; flex-direction:column; gap:18px; position:sticky; top:20px;}
+  .filter-group h2{font-size:12.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-dim); margin-bottom:8px; font-weight:600;}
+  #categoryList{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px; max-height:340px; overflow-y:auto;}
+  .cat-item{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:7px 9px; border-radius:7px; cursor:pointer; border:1px solid transparent; text-align:left; width:100%; background:none;
+  }
+  .cat-item:hover{background:var(--surface-2);}
+  .cat-item.active{background:var(--accent-soft); border-color:var(--accent); color:var(--ink);}
+  .cat-item .cat-name{font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .cat-item .cat-count{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-dim); flex-shrink:0;}
+  .chip-row{display:flex; flex-wrap:wrap; gap:6px;}
+  .chip{
+    font-size:12px; padding:5px 10px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); cursor:pointer; color:var(--ink-dim);
+  }
+  .chip.active{background:var(--info-soft); border-color:var(--info); color:var(--info); font-weight:600;}
+  .toggle{display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;}
+  .toggle input{accent-color:var(--accent); width:15px; height:15px;}
+  .clear-filters{font-size:12px; color:var(--info); background:none; border:none; cursor:pointer; padding:0; text-align:left;}
+
+  .results{display:flex; flex-direction:column; gap:10px; min-width:0;}
+  .results-head{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-dim); padding:2px 2px 4px;}
+  .case-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; cursor:pointer;
+    display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 2px var(--shadow);
+  }
+  .case-card:hover{border-color:var(--info);}
+  .case-card.selected{border-color:var(--accent); background:var(--accent-soft);}
+  .case-top{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .case-cat{font-size:11.5px; color:var(--info); font-weight:600;}
+  .case-title{font-size:14.5px; font-weight:600;}
+  .case-badges{display:flex; gap:6px; flex-wrap:wrap;}
+  .badge{font-size:11px; padding:3px 8px; border-radius:6px; font-weight:600;}
+  .badge.resolved{background:var(--accent-soft); color:var(--accent);}
+  .badge.unresolved{background:var(--warn-soft); color:var(--warn);}
+  .badge.dept{background:var(--info-soft); color:var(--info); font-weight:500;}
+  .case-snippet{color:var(--ink-dim); font-size:12.5px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+
+  .empty-state, .error-state, .loading-state{
+    background:var(--surface); border:1px dashed var(--line); border-radius:12px; padding:28px 20px; text-align:center;
+    color:var(--ink-dim); display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .error-state{border-style:solid; border-color:var(--danger); background:var(--danger-soft); color:var(--ink);}
+  .error-state .fix-btn{
+    margin-top:4px; background:var(--danger); color:#fff; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;
+  }
+  .skeleton-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:8px;}
+  .skel-line{height:11px; border-radius:5px; background:var(--surface-2); animation:shimmer 1.3s ease-in-out infinite;}
+  @keyframes shimmer{0%,100%{opacity:0.6;} 50%{opacity:1;}}
+
+  .detail{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px;
+    position:sticky; top:20px; max-height:calc(100vh - 40px); overflow-y:auto;
+  }
+  .detail-close{display:none;}
+  @media (max-width:1180px){ .detail-close{display:inline-flex;} }
+  .detail-cat{font-size:11.5px; color:var(--info); font-weight:600; margin-bottom:6px;}
+  .detail h3{font-size:17px; margin-bottom:10px;}
+  .detail-section{margin-top:14px;}
+  .detail-section h4{font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-dim); margin-bottom:6px;}
+  .script-box{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:11px 12px; font-size:13px;
+    white-space:pre-wrap;
+  }
+  .copy-btn{
+    margin-top:8px; display:inline-flex; align-items:center; gap:6px; background:var(--accent); color:var(--accent-ink);
+    border:none; padding:7px 13px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .copy-btn.copied{background:var(--info);}
+  .dept-list{display:flex; flex-wrap:wrap; gap:6px;}
+  .no-selection{color:var(--ink-dim); font-size:13px; text-align:center; padding:30px 10px;}
+
+  .foot{margin-top:26px; text-align:center; font-size:12px; color:var(--ink-dim);}
+  .foot a{color:var(--info);}
+
+  /* Responsive overrides — kept last so they win the cascade over the base rules above */
+  @media (max-width:1180px){
+    .layout{grid-template-columns:210px minmax(0,1fr);}
+    .detail{display:none; position:static; max-height:none;}
+    .detail.open{display:block; grid-column:1 / -1;}
+  }
+  @media (max-width:720px){
+    .layout{grid-template-columns:1fr;}
+    .sidebar{order:1; position:static;}
+    .results{order:2;}
+    .detail{order:3;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><span class="brand-mark">EV7</span><span class="brand-name">Knowledge Box</span></div>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="text" placeholder="ค้นหาเคส เช่น แบตเตอรี่ไม่เก็บไฟ, ICI, Booking Service, รถทดแทน..." autocomplete="off"/>
+    </div>
+    <div class="sync-pill" id="syncPill" data-state="loading"><span class="sync-dot"></span><span id="syncLabel">กำลังเชื่อมต่อ Google Sheet…</span></div>
+  </div>
+
+  <div class="tag-row" id="tagRow"></div>
+
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="filter-group" id="categoryFilterGroup">
+        <h2>หมวดหมู่หลัก</h2>
+        <ul id="categoryList"></ul>
+      </div>
+      <div class="filter-group" id="deptFilterGroup">
+        <h2>หน่วยงานที่เกี่ยวข้อง</h2>
+        <div class="chip-row" id="deptChips"></div>
+      </div>
+      <div class="filter-group">
+        <label class="toggle"><input type="checkbox" id="unresolvedOnly"/> เฉพาะที่ยังไม่มีแนวทางแก้ไข</label>
+      </div>
+      <div class="filter-group" id="filterClearWrap" style="display:none;">
+        <button class="clear-filters" id="clearFilters">✕ ล้างตัวกรองทั้งหมด</button>
+      </div>
+    </aside>
+
+    <section class="results">
+      <div class="results-head">
+        <span id="resultsCount"></span>
+      </div>
+      <div id="resultsBody"></div>
+    </section>
+
+    <aside class="detail" id="detailPane">
+      <button class="detail-close chip" id="detailClose" style="margin-bottom:10px;">← กลับไปที่รายการ</button>
+      <div id="detailBody"><div class="no-selection">เลือกเคสทางซ้ายเพื่อดูสคริปต์และหน่วยงานที่เกี่ยวข้อง</div></div>
+    </aside>
+  </div>
+
+  <div class="foot">เชื่อมต่อสดกับ Google Sheet “CS Workflow” โดยตรง (ต้องแชร์ชีตเป็น “ทุกคนที่มีลิงก์ – ดูได้”) • ข้อมูลรีเฟรชอัตโนมัติทุก 5 นาที</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- Data source config: public Google Sheet, read directly (no Claude/API key needed) ----------
+  // The Sheet must be shared as "Anyone with the link – Viewer" or this will fail.
+  // Loaded via JSONP (a <script> tag), NOT fetch() — Google's endpoint blocks fetch()/XHR
+  // from arbitrary pages with a CORS error ("Failed to fetch"), but a <script src="..."> tag
+  // is not subject to CORS at all, which is why this old-school trick is the reliable one here.
+  var SHEET_ID = "1kUAccfvaDYJIyomsGHul0DewD1x7UwaCHs4mhkr8ai4";
+  var TAB_A = "EV7 CS Protocal"; // schema: No. / อันดับหมวด / หัวข้อหลัก ...
+  var TAB_B = "Sheet1";          // schema: อันดับ / เนื้อหาในหัวข้อหลัก ...
+  var TAB_CONFIG = "Config";     // optional tab: Hashtag / ชื่อหมวดหมู่-หน่วยงานที่ปรับเอง (ดูรูปแบบใน parseConfigTable)
+  var JSONP_TIMEOUT_MS = 15000;
+  var jsonpSeq = 0;
+
+  function loadSheetTabViaJsonp(tabName){
+    return new Promise(function(resolve, reject){
+      var cbName = "__gvizCb" + (jsonpSeq++) + "_" + Date.now();
+      var script = document.createElement("script");
+      var timeoutId;
+      function cleanup(){
+        clearTimeout(timeoutId);
+        try{ delete window[cbName]; }catch(e){ window[cbName] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cbName] = function(resp){
+        cleanup();
+        if (!resp || resp.status === "error"){
+          var msg = (resp && resp.errors && resp.errors[0] && (resp.errors[0].detailed_message || resp.errors[0].message)) || "อ่านข้อมูลจากแท็บ “" + tabName + "” ไม่สำเร็จ";
+          reject(new Error(msg));
+          return;
+        }
+        resolve(gvizTableToRows(resp.table));
+      };
+      script.onerror = function(){
+        cleanup();
+        reject(new Error("โหลดข้อมูลจาก Google Sheets ไม่สำเร็จ (เครือข่ายมีปัญหา หรือชีตยังไม่ได้แชร์แบบสาธารณะ)"));
+      };
+      timeoutId = setTimeout(function(){
+        cleanup();
+        reject(new Error("หมดเวลารอข้อมูลจากแท็บ “" + tabName + "” (เกิน 15 วินาที)"));
+      }, JSONP_TIMEOUT_MS);
+      script.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq" +
+        "?tqx=out:json;responseHandler:" + cbName +
+        "&headers=1&sheet=" + encodeURIComponent(tabName) +
+        "&_=" + Date.now();
+      document.head.appendChild(script);
+    });
+  }
+
+  // ---------- Parser: gviz table JSON -> row arrays (same shape the schema parsers below expect) ----------
+  function gvizTableToRows(table){
+    if (!table || !table.cols) return [];
+    var header = table.cols.map(function(c){ return (c && (c.label || c.id)) || ""; });
+    var rows = (table.rows || []).map(function(r){
+      return (r.c || []).map(function(cell){
+        if (!cell) return "";
+        if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
+        if (cell.v === undefined || cell.v === null) return "";
+        return String(cell.v).trim();
+      });
+    });
+    return [header].concat(rows);
+  }
+  function isBlankRow(cells){ return cells.every(function(c){return !c;}); }
+  function isMergedRow(cells){ return cells.some(function(c){return c.indexOf("[merged]")===0;}); }
+  function findHeaderIndex(rows, mustInclude){
+    for (var i=0;i<rows.length;i++){
+      var ok = mustInclude.every(function(name){ return rows[i].indexOf(name) !== -1; });
+      if (ok) return i;
+    }
+    return -1;
+  }
+  function parseSchemaA(allRows){
+    var headerIdx = findHeaderIndex(allRows, ["No.","อันดับหมวด"]);
+    if (headerIdx === -1) return [];
+    var header = allRows[headerIdx];
+    var idx = function(name){ return header.indexOf(name); };
+    var iRank=idx("อันดับหมวด"), iMain=idx("หัวข้อหลัก"), iSub=idx("หมวดหมู่ย่อย"),
+        iCount=idx("จำนวน Chats"), iCase=idx("รายละเอียด/เคสตัวอย่าง"),
+        iSol1=idx("แนวทางแก้ปัญหา 1"), iSol2=idx("แนวทางแก้ปัญหา 2"),
+        iDept=idx("หน่วยงานที่รับผิดชอบ"), iResolved=idx("มีแนวทางแก้ไข?");
+    var out=[], curRank=null, curMain=null, curCount=null;
+    for (var r=headerIdx+1;r<allRows.length;r++){
+      var cells = allRows[r];
+      if (isBlankRow(cells) || isMergedRow(cells)) continue;
+      var rank = cells[iRank], main = cells[iMain], count = cells[iCount];
+      if (rank){ curRank = rank; curCount = count; }
+      if (main) curMain = main;
+      if (!curMain) continue;
+      out.push({
+        source:"A", rank:curRank, mainTopic:curMain, subTopic:cells[iSub]||"",
+        chatCount:curCount||"", caseDetail:cells[iCase]||"",
+        solution1:cells[iSol1]||"", solution2:cells[iSol2]||"",
+        department:cells[iDept]||"",
+        resolved:(cells[iResolved]||"").trim().toLowerCase()==="yes"
+      });
+    }
+    return out;
+  }
+  function parseSchemaB(allRows){
+    var headerIdx = findHeaderIndex(allRows, ["อันดับ","เนื้อหาในหัวข้อหลัก"]);
+    if (headerIdx === -1) return [];
+    var header = allRows[headerIdx];
+    var idx = function(name){ return header.indexOf(name); };
+    var iRank=idx("อันดับ"), iMain=idx("หัวข้อหลัก"), iSub=idx("หมวดหมู่ย่อย"),
+        iCount=idx("จำนวนหัวข้อ Chats"), iCase=idx("เนื้อหาในหัวข้อหลัก"),
+        iSol1=idx("แนวทางแก้ปัญหา 1 แจ้งลูกค้า"), iDept1=idx("หน่วยงานที่รับผิดชอบ (1)"),
+        iDept2=idx("หน่วยงานที่รับผิดชอบ (2)"), iSol2=idx("แนวทางแก้ปัญหา 2");
+    var out=[], curRank=null, curMain=null, curCount=null;
+    for (var r=headerIdx+1;r<allRows.length;r++){
+      var cells = allRows[r];
+      if (isBlankRow(cells) || isMergedRow(cells)) continue;
+      var rank = cells[iRank], main = cells[iMain], count = cells[iCount];
+      if (rank){ curRank = rank; curCount = count; curMain = main; }
+      if (main) curMain = main;
+      if (!curMain) continue;
+      var caseDetail = cells[iCase]||"";
+      if (!caseDetail && !cells[iSub]) continue;
+      out.push({
+        source:"B", rank:curRank, mainTopic:curMain, subTopic:cells[iSub]||"",
+        chatCount:curCount||"", caseDetail:caseDetail,
+        solution1:cells[iSol1]||"", solution2:cells[iSol2]||"",
+        department:[cells[iDept1],cells[iDept2]].filter(Boolean).join(" / "),
+        resolved: !!(cells[iSol1])
+      });
+    }
+    return out;
+  }
+  function mergeEntries(entriesA, entriesB){
+    var maxRankA = entriesA.reduce(function(m,e){ return Math.max(m, parseInt(e.rank)||0); }, 0);
+    var extra = entriesB.filter(function(e){ return (parseInt(e.rank)||0) > maxRankA; });
+    return entriesA.concat(extra);
+  }
+
+  // Stable id for a custom hashtag row — just needs to be unique per row, not secure.
+  function hashId(str){
+    str = String(str||"");
+    var h = 5381;
+    for (var i=0;i<str.length;i++){ h = ((h*33) ^ str.charCodeAt(i)) >>> 0; }
+    return "c" + h.toString(36);
+  }
+
+  // ---------- Parser: "Config" tab -> {categoryRename, categoryOrder, deptRename, deptOrder, customTags, hiddenAuto} ----------
+  // Shared, editable-in-Sheets source for display-name overrides & hashtags — the SAME tab
+  // and format the Artifact Back End reads, so both files always show identical results.
+  // Expected header row (any column order, matched by name): ประเภท | ค่าเดิม | ค่าที่ต้องการแสดง / คำค้นหา | ลำดับ
+  // ประเภท can be: "หมวดหมู่" (rename a category), "หน่วยงาน" (rename a department),
+  // "Hashtag" (add a custom hashtag), "ซ่อน Hashtag" (hide an auto-generated hashtag).
+  function parseConfigTable(allRows){
+    var cfg = { categoryRename:{}, categoryOrder:[], deptRename:{}, deptOrder:[], customTags:[], hiddenAuto:[] };
+    var headerIdx = findHeaderIndex(allRows, ["ประเภท"]);
+    if (headerIdx === -1) return cfg;
+    var header = allRows[headerIdx];
+    var idx = function(name){ return header.indexOf(name); };
+    var iType=idx("ประเภท"), iOrig=idx("ค่าเดิม"), iVal=idx("ค่าที่ต้องการแสดง / คำค้นหา"), iOrder=idx("ลำดับ");
+    var catOrderPairs = [], deptOrderPairs = [];
+    for (var r=headerIdx+1; r<allRows.length; r++){
+      var cells = allRows[r];
+      if (isBlankRow(cells) || isMergedRow(cells)) continue;
+      var type = (cells[iType]||"").trim().toLowerCase();
+      var orig = (iOrig>-1 ? cells[iOrig] : "") || "";
+      orig = orig.trim();
+      var val = (iVal>-1 ? cells[iVal] : "") || "";
+      val = val.trim();
+      var orderNum = iOrder>-1 ? parseInt(cells[iOrder],10) : NaN;
+      if (!type || !orig) continue;
+      if (type === "หมวดหมู่"){
+        if (val) cfg.categoryRename[orig] = val;
+        if (!isNaN(orderNum)) catOrderPairs.push([orig, orderNum]);
+      } else if (type === "หน่วยงาน"){
+        if (val) cfg.deptRename[orig] = val;
+        if (!isNaN(orderNum)) deptOrderPairs.push([orig, orderNum]);
+      } else if (type === "hashtag"){
+        cfg.customTags.push({ id: hashId(orig+"|"+val+"|"+r), label:orig, query: val || orig });
+      } else if (type === "ซ่อน hashtag"){
+        cfg.hiddenAuto.push(orig.toLowerCase());
+      }
+    }
+    catOrderPairs.sort(function(a,b){ return a[1]-b[1]; });
+    cfg.categoryOrder = catOrderPairs.map(function(p){ return p[0]; });
+    deptOrderPairs.sort(function(a,b){ return a[1]-b[1]; });
+    cfg.deptOrder = deptOrderPairs.map(function(p){ return p[0]; });
+    return cfg;
+  }
+
+  function buildKnowledgeBase(rowsA, rowsB){
+    var entriesA = parseSchemaA(rowsA || []);
+    var entriesB = parseSchemaB(rowsB || []);
+    var merged = mergeEntries(entriesA, entriesB);
+    return merged.map(function(e, i){ e.id = "e" + i; return e; });
+  }
+
+  // ---------- App state ----------
+  var state = {
+    load: "loading", // loading | ready | error
+    errorInfo: null,
+    entries: [],
+    categories: [], // {rank, name, chatCount, total, unresolved}
+    departments: [], // {name, count}
+    query: "",
+    activeCategory: null,
+    activeDept: null,
+    unresolvedOnly: false,
+    selectedId: null,
+    lastSyncedAt: null,
+    stale: false,
+    // ชื่อที่ปรับเอง/Hashtag ที่เพิ่มเอง — อ่านจากแท็บ "Config" ในชีตเดียวกัน (แก้ไขได้ที่ชีตเท่านั้น)
+    menu: { categoryRename:{}, categoryOrder:[], deptRename:{}, deptOrder:[] },
+    hashtags: { customTags:[], hiddenAuto:[] }
+  };
+
+  function els(){
+    return {
+      searchInput: document.getElementById("searchInput"),
+      syncPill: document.getElementById("syncPill"),
+      syncLabel: document.getElementById("syncLabel"),
+      statsRow: document.getElementById("statsRow"),
+      tagRow: document.getElementById("tagRow"),
+      categoryList: document.getElementById("categoryList"),
+      categoryFilterGroup: document.getElementById("categoryFilterGroup"),
+      deptFilterGroup: document.getElementById("deptFilterGroup"),
+      deptChips: document.getElementById("deptChips"),
+      unresolvedOnly: document.getElementById("unresolvedOnly"),
+      clearFiltersWrap: document.getElementById("filterClearWrap"),
+      clearFilters: document.getElementById("clearFilters"),
+      resultsBody: document.getElementById("resultsBody"),
+      resultsCount: document.getElementById("resultsCount"),
+      detailPane: document.getElementById("detailPane"),
+      detailBody: document.getElementById("detailBody"),
+      detailClose: document.getElementById("detailClose")
+    };
+  }
+  var E = els();
+
+  function escapeHtml(s){
+    return String(s||"").replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function parseCount(s){
+    var n = parseInt(String(s||"").replace(/[^0-9]/g,""),10);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function displayCatName(name){ return (state.menu.categoryRename && state.menu.categoryRename[name]) || name; }
+  function displayDeptName(name){ return (state.menu.deptRename && state.menu.deptRename[name]) || name; }
+
+  function deriveCategoriesAndDepts(entries){
+    var catMap = {};
+    var order = [];
+    entries.forEach(function(e){
+      var key = e.rank || e.mainTopic;
+      if (!catMap[key]){
+        catMap[key] = { rank:e.rank, name:e.mainTopic, key:key, chatCount:e.chatCount, total:0, unresolved:0 };
+        order.push(key);
+      }
+      catMap[key].total++;
+      if (!e.resolved) catMap[key].unresolved++;
+      if (!catMap[key].chatCount && e.chatCount) catMap[key].chatCount = e.chatCount;
+    });
+    var cats = order.map(function(k){ return catMap[k]; });
+    cats.sort(function(a,b){ return (parseInt(a.rank)||999) - (parseInt(b.rank)||999); });
+
+    var deptMap = {};
+    entries.forEach(function(e){
+      if (!e.department) return;
+      e.department.split("/").map(function(d){return d.trim();}).filter(Boolean).forEach(function(d){
+        deptMap[d] = (deptMap[d]||0) + 1;
+      });
+    });
+    var depts = Object.keys(deptMap).map(function(name){ return {name:name, count:deptMap[name]}; });
+    depts.sort(function(a,b){ return b.count - a.count; });
+
+    return { categories: cats, departments: depts };
+  }
+
+  // Applies display-name overrides + custom ordering from the "Config" tab (state.menu)
+  // on top of the raw derived categories/departments — same logic the Artifact Back End
+  // used to run, just fed by the Sheet now instead of a live editor.
+  function applyMenuConfig(derived){
+    derived.categories.forEach(function(c){ c.displayName = displayCatName(c.name); });
+    derived.departments.forEach(function(d){ d.displayName = displayDeptName(d.name); });
+    var catOrder = state.menu.categoryOrder || [];
+    if (catOrder.length){
+      derived.categories.sort(function(a,b){
+        var ia=catOrder.indexOf(a.name), ib=catOrder.indexOf(b.name);
+        if (ia===-1) ia = 9999+(parseInt(a.rank)||0);
+        if (ib===-1) ib = 9999+(parseInt(b.rank)||0);
+        return ia-ib;
+      });
+    }
+    var deptOrder = state.menu.deptOrder || [];
+    if (deptOrder.length){
+      derived.departments.sort(function(a,b){
+        var ia=deptOrder.indexOf(a.name), ib=deptOrder.indexOf(b.name);
+        if (ia===-1) ia=9999; if (ib===-1) ib=9999;
+        if (ia!==ib) return ia-ib;
+        return b.count-a.count;
+      });
+    }
+    return derived;
+  }
+
+  function matchesQuery(e, q){
+    if (!q) return true;
+    // Strip a leading "#" so hashtag-shortcut chips behave like a normal search term.
+    var cleaned = q.replace(/^#/, "").trim();
+    if (!cleaned) return true;
+    var hay = [e.mainTopic,e.subTopic,e.caseDetail,e.solution1,e.solution2,e.department].join(" ").toLowerCase();
+    // Multiple words = AND search: every word must appear somewhere in the entry,
+    // so a search can match across different fields/categories at once instead of
+    // requiring the exact phrase to appear verbatim in one place.
+    var terms = cleaned.toLowerCase().split(/\s+/).filter(Boolean);
+    return terms.every(function(t){ return hay.indexOf(t) !== -1; });
+  }
+  function filteredEntries(){
+    return state.entries.filter(function(e){
+      if (state.activeCategory && String(e.rank || e.mainTopic) !== String(state.activeCategory)) return false;
+      if (state.activeDept && (e.department||"").indexOf(state.activeDept) === -1) return false;
+      if (state.unresolvedOnly && e.resolved) return false;
+      if (!matchesQuery(e, state.query)) return false;
+      return true;
+    });
+  }
+
+  // ---------- Rendering ----------
+  function renderSyncPill(){
+    var map = {
+      loading: ["loading","กำลังเชื่อมต่อ Google Sheet…"],
+      ready: ["live", state.stale ? "กำลังซิงค์ข้อมูลใหม่…" : "เชื่อมต่อสด • อัปเดต " + (state.lastSyncedAt ? relTime(state.lastSyncedAt) : "")],
+      error: ["error", state.errorInfo && state.errorInfo.label || "เชื่อมต่อไม่สำเร็จ"]
+    };
+    var m = map[state.load] || map.loading;
+    E.syncPill.setAttribute("data-state", m[0]);
+    E.syncLabel.textContent = m[1];
+  }
+  function relTime(ts){
+    var s = Math.round((Date.now()-ts)/1000);
+    if (s < 5) return "เมื่อสักครู่";
+    if (s < 60) return s + " วิที่แล้ว";
+    var m = Math.round(s/60);
+    if (m < 60) return m + " นาทีที่แล้ว";
+    var h = Math.round(m/60);
+    return h + " ชม.ที่แล้ว";
+  }
+
+  function renderStats(){
+    var cats = state.categories;
+    var totalCases = state.entries.length;
+    var totalUnresolved = state.entries.filter(function(e){return !e.resolved;}).length;
+    var tiles = [
+      { num: cats.length, label:"หมวดหมู่หลัก", action:"scroll-categories", title:"ดูรายการหมวดหมู่ทั้งหมด" },
+      { num: totalCases, label:"เคส/แนวทางทั้งหมด", action:"clear-filters", title:"ล้างตัวกรอง แสดงเคสทั้งหมด" },
+      { num: totalUnresolved, label:"ยังไม่มีแนวทางแก้ไข", warn:true, action:"toggle-unresolved", title:"กรองเฉพาะเคสที่ยังไม่มีแนวทางแก้ไข" },
+      { num: state.departments.length, label:"หน่วยงานที่เกี่ยวข้อง", action:"scroll-depts", title:"ดูหน่วยงานที่เกี่ยวข้องทั้งหมด" }
+    ];
+    E.statsRow.innerHTML = tiles.map(function(t){
+      return '<button type="button" class="stat-tile'+(t.warn?" warn":" accent")+'" data-action="'+t.action+'" title="'+escapeHtml(t.title)+'">'+
+        '<div class="num mono">'+t.num+'</div><div class="label">'+t.label+'</div></button>';
+    }).join("");
+  }
+
+  function shortTagLabel(name){
+    var s = String(name||"");
+    if (s.indexOf(":") !== -1) s = s.split(":").pop();
+    else if (s.indexOf("/") !== -1) s = s.split("/")[0];
+    s = s.trim();
+    if (s.length > 16) s = s.slice(0, 16) + "…";
+    return s;
+  }
+
+  function renderTagRow(){
+    var seen = {};
+    var tags = []; // {label, query}
+    state.categories.forEach(function(c){
+      var full = (c.displayName || c.name || "");
+      var label = shortTagLabel(full);
+      var lower = label.toLowerCase();
+      if (!label || seen[lower]) return;
+      // Match against both the shortened (…-truncated) label and the full untruncated
+      // name, so a Config-tab row can hide a tag by typing either form.
+      var hidden = state.hashtags.hiddenAuto || [];
+      if (hidden.indexOf(lower) !== -1 || hidden.indexOf(full.toLowerCase()) !== -1) return;
+      seen[lower] = true;
+      tags.push({ label:label, query:label });
+    });
+    (state.hashtags.customTags||[]).forEach(function(t){
+      if (!t || !t.label) return;
+      var lower = t.label.toLowerCase();
+      if (seen[lower]) return;
+      seen[lower] = true;
+      tags.push({ label:t.label, query: t.query || t.label });
+    });
+    tags = tags.slice(0, 16);
+    if (!tags.length){ E.tagRow.innerHTML = ""; return; }
+    E.tagRow.innerHTML = tags.map(function(t){
+      var active = state.query && state.query.replace(/^#/,"").trim().toLowerCase() === String(t.query).toLowerCase();
+      return '<button type="button" class="tag-chip'+(active?" active":"")+'" data-tag="'+escapeHtml(t.query)+'" title="'+escapeHtml(t.label)+'">#'+escapeHtml(t.label)+'</button>';
+    }).join("");
+  }
+
+  function renderCategories(){
+    E.categoryList.innerHTML = state.categories.map(function(c){
+      var active = String(state.activeCategory) === String(c.key);
+      return '<li><button class="cat-item'+(active?" active":"")+'" data-key="'+escapeHtml(c.key)+'">'+
+        '<span class="cat-name">'+ (c.rank?escapeHtml(c.rank)+". ":"") + escapeHtml(c.displayName || c.name)+'</span>'+
+        '<span class="cat-count mono">'+c.total+'</span></button></li>';
+    }).join("");
+    Array.prototype.forEach.call(E.categoryList.querySelectorAll(".cat-item"), function(btn){
+      btn.addEventListener("click", function(){
+        var key = btn.getAttribute("data-key");
+        state.activeCategory = (String(state.activeCategory) === key) ? null : key;
+        render();
+      });
+    });
+  }
+
+  function renderDeptChips(){
+    var top = state.departments.slice(0,10);
+    E.deptChips.innerHTML = top.map(function(d){
+      var active = state.activeDept === d.name;
+      return '<button class="chip'+(active?" active":"")+'" data-dept="'+escapeHtml(d.name)+'">'+escapeHtml(d.displayName || d.name)+' ('+d.count+')</button>';
+    }).join("");
+    Array.prototype.forEach.call(E.deptChips.querySelectorAll(".chip"), function(btn){
+      btn.addEventListener("click", function(){
+        var dept = btn.getAttribute("data-dept");
+        state.activeDept = (state.activeDept === dept) ? null : dept;
+        render();
+      });
+    });
+  }
+
+  function renderClearFilters(){
+    var any = state.activeCategory || state.activeDept || state.unresolvedOnly || state.query;
+    E.clearFiltersWrap.style.display = any ? "" : "none";
+  }
+
+  function skeletonCards(n){
+    var html = "";
+    for (var i=0;i<n;i++){
+      html += '<div class="skeleton-card"><div class="skel-line" style="width:40%"></div><div class="skel-line" style="width:80%"></div><div class="skel-line" style="width:60%"></div></div>';
+    }
+    return html;
+  }
+
+  function renderResults(){
+    if (state.load === "loading" && !state.entries.length){
+      E.resultsBody.innerHTML = skeletonCards(5);
+      E.resultsCount.textContent = "";
+      return;
+    }
+    if (state.load === "error" && !state.entries.length){
+      var info = state.errorInfo || {};
+      E.resultsBody.innerHTML =
+        '<div class="error-state"><strong>'+escapeHtml(info.title || "เชื่อมต่อ Google Sheet ไม่สำเร็จ")+'</strong>'+
+        '<span>'+escapeHtml(info.detail || "")+'</span>'+
+        (info.actionLabel ? '<button class="fix-btn" disabled>'+escapeHtml(info.actionLabel)+'</button>' : '') +
+        '</div>';
+      E.resultsCount.textContent = "";
+      return;
+    }
+    var list = filteredEntries();
+    list.sort(function(a,b){ return (parseInt(a.rank)||999) - (parseInt(b.rank)||999); });
+    E.resultsCount.textContent = list.length + " เคสที่พบ" + (state.entries.length ? " จากทั้งหมด " + state.entries.length : "");
+    if (!list.length){
+      E.resultsBody.innerHTML = '<div class="empty-state">ไม่พบเคสที่ตรงกับตัวกรอง ลองปรับคำค้นหาหรือล้างตัวกรอง</div>';
+      return;
+    }
+    E.resultsBody.innerHTML = list.map(function(e){
+      var title = e.subTopic || e.caseDetail || e.mainTopic;
+      var selected = state.selectedId === e.id;
+      return '<article class="case-card'+(selected?" selected":"")+'" data-id="'+e.id+'">'+
+        '<div class="case-top"><span class="case-cat">'+escapeHtml(displayCatName(e.mainTopic))+'</span>'+
+        '</div>'+
+        '<div class="case-title">'+escapeHtml(title)+'</div>'+
+        '<div class="case-snippet">'+escapeHtml(e.caseDetail !== title ? e.caseDetail : e.solution1)+'</div>'+
+        '<div class="case-badges">'+
+          '<span class="badge '+(e.resolved?"resolved":"unresolved")+'">'+(e.resolved?"มีแนวทางแก้ไข":"ยังไม่มีแนวทางแก้ไข")+'</span>'+
+          (e.department ? e.department.split("/").map(function(d){return '<span class="badge dept">'+escapeHtml(displayDeptName(d.trim()))+'</span>';}).join("") : '') +
+        '</div></article>';
+    }).join("");
+    Array.prototype.forEach.call(E.resultsBody.querySelectorAll(".case-card"), function(card){
+      card.addEventListener("click", function(){
+        state.selectedId = card.getAttribute("data-id");
+        E.detailPane.classList.add("open");
+        render();
+        if (window.matchMedia("(max-width:1180px)").matches){
+          E.detailPane.scrollIntoView({block:"start", behavior:"smooth"});
+        } else {
+          card.scrollIntoView({block:"nearest"});
+        }
+      });
+    });
+  }
+
+  function copyToClipboard(text, btn){
+    function done(ok){
+      if (!btn) return;
+      btn.textContent = ok ? "คัดลอกแล้ว ✓" : "คัดลอกไม่สำเร็จ";
+      btn.classList.toggle("copied", ok);
+      setTimeout(function(){ btn.textContent = "คัดลอกสคริปต์"; btn.classList.remove("copied"); }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){done(true);}, function(){done(false);});
+    } else {
+      try{
+        var ta = document.createElement("textarea");
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        done(true);
+      }catch(err){ done(false); }
+    }
+  }
+
+  function renderDetail(){
+    var entry = state.entries.filter(function(e){ return e.id === state.selectedId; })[0];
+    if (!entry){
+      E.detailBody.innerHTML = '<div class="no-selection">เลือกเคสทางซ้ายเพื่อดูสคริปต์และหน่วยงานที่เกี่ยวข้อง</div>';
+      return;
+    }
+    var depts = entry.department ? entry.department.split("/").map(function(d){return d.trim();}).filter(Boolean) : [];
+    var html = '<div class="detail-cat">'+escapeHtml(displayCatName(entry.mainTopic))+(entry.subTopic?' › '+escapeHtml(entry.subTopic):'')+'</div>'+
+      '<h3>'+escapeHtml(entry.caseDetail || entry.subTopic || entry.mainTopic)+'</h3>'+
+      '<div class="case-badges"><span class="badge '+(entry.resolved?"resolved":"unresolved")+'">'+(entry.resolved?"มีแนวทางแก้ไข":"ยังไม่มีแนวทางแก้ไข")+'</span></div>';
+
+    if (entry.solution1){
+      html += '<div class="detail-section"><h4>สคริปต์แจ้งลูกค้า / ขั้นตอนแรก</h4>'+
+        '<div class="script-box" id="sol1Box">'+escapeHtml(entry.solution1)+'</div>'+
+        '<button class="copy-btn" id="copySol1">คัดลอกสคริปต์</button></div>';
+    }
+    if (entry.solution2){
+      html += '<div class="detail-section"><h4>แนวทางเสริม / ระบบสนับสนุน</h4>'+
+        '<div class="script-box" id="sol2Box">'+escapeHtml(entry.solution2)+'</div>'+
+        '<button class="copy-btn" id="copySol2">คัดลอกข้อความ</button></div>';
+    }
+    if (!entry.solution1 && !entry.solution2){
+      html += '<div class="detail-section"><h4>สถานะ</h4><div class="script-box">ยังไม่มีแนวทางแก้ไขที่บันทึกไว้สำหรับเคสนี้ในชีต — แจ้งหัวหน้าทีมเพื่อยืนยันขั้นตอน</div></div>';
+    }
+    if (depts.length){
+      html += '<div class="detail-section"><h4>หน่วยงานที่ประสาน</h4><div class="dept-list">'+
+        depts.map(function(d){return '<span class="badge dept">'+escapeHtml(displayDeptName(d))+'</span>';}).join("")+'</div></div>';
+    }
+    E.detailBody.innerHTML = html;
+    var b1 = document.getElementById("copySol1");
+    if (b1) b1.addEventListener("click", function(){ copyToClipboard(entry.solution1, b1); });
+    var b2 = document.getElementById("copySol2");
+    if (b2) b2.addEventListener("click", function(){ copyToClipboard(entry.solution2, b2); });
+  }
+
+  function render(){
+    renderSyncPill();
+    renderStats();
+    renderTagRow();
+    renderCategories();
+    renderDeptChips();
+    renderClearFilters();
+    renderResults();
+    renderDetail();
+  }
+
+  function flashSection(el){
+    if (!el) return;
+    el.classList.remove("flash");
+    // force reflow so the animation can restart if clicked again quickly
+    void el.offsetWidth;
+    el.classList.add("flash");
+    el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
+  // ---------- Events ----------
+  var searchTimer = null;
+  E.searchInput.addEventListener("input", function(){
+    clearTimeout(searchTimer);
+    var v = E.searchInput.value;
+    searchTimer = setTimeout(function(){ state.query = v; render(); }, 120);
+  });
+  E.unresolvedOnly.addEventListener("change", function(){
+    state.unresolvedOnly = E.unresolvedOnly.checked; render();
+  });
+  E.clearFilters.addEventListener("click", function(){
+    state.query=""; state.activeCategory=null; state.activeDept=null; state.unresolvedOnly=false;
+    E.searchInput.value=""; E.unresolvedOnly.checked=false;
+    render();
+  });
+  E.detailClose.addEventListener("click", function(){
+    E.detailPane.classList.remove("open");
+  });
+
+  // Stat tiles (delegated — tiles are re-rendered on every render() call)
+  E.statsRow.addEventListener("click", function(ev){
+    var btn = ev.target.closest(".stat-tile");
+    if (!btn) return;
+    var action = btn.getAttribute("data-action");
+    if (action === "clear-filters"){
+      state.query=""; state.activeCategory=null; state.activeDept=null; state.unresolvedOnly=false;
+      E.searchInput.value=""; E.unresolvedOnly.checked=false;
+      render();
+    } else if (action === "toggle-unresolved"){
+      state.unresolvedOnly = !state.unresolvedOnly;
+      E.unresolvedOnly.checked = state.unresolvedOnly;
+      render();
+      flashSection(E.resultsBody.closest(".results"));
+    } else if (action === "scroll-categories"){
+      flashSection(E.categoryFilterGroup);
+    } else if (action === "scroll-depts"){
+      flashSection(E.deptFilterGroup);
+    }
+  });
+
+  // Hashtag shortcut chips (delegated — chips are re-rendered on every render() call)
+  E.tagRow.addEventListener("click", function(ev){
+    var btn = ev.target.closest(".tag-chip");
+    if (!btn) return;
+    var tag = btn.getAttribute("data-tag") || "";
+    var already = state.query && state.query.replace(/^#/,"").trim().toLowerCase() === tag.toLowerCase();
+    state.query = already ? "" : tag;
+    state.activeCategory = null;
+    state.activeDept = null;
+    E.searchInput.value = state.query;
+    render();
+  });
+
+  // ---------- Data source: read the public Google Sheet directly via JSONP ----------
+  var REFRESH_MS = 300000; // 5 minutes
+  var refreshTimer = null;
+
+  function describeLoadError(err){
+    var detail = String(err && err.message || err);
+    var hint = "ตรวจสอบว่า: 1) แชร์ Google Sheet เป็น “ทุกคนที่มีลิงก์ – ดูได้ (Viewer)” 2) ชื่อแท็บในชีตตรงกับที่ตั้งไว้ในไฟล์นี้ (“" + TAB_A + "” และ “" + TAB_B + "”) 3) เปิดไฟล์นี้ผ่านเบราว์เซอร์ที่ต่ออินเทอร์เน็ตได้ตามปกติ";
+    return { title: "ดึงข้อมูลจาก Google Sheet ไม่สำเร็จ", detail: hint + " — รายละเอียดข้อผิดพลาด: " + detail, label: "เชื่อมต่อไม่สำเร็จ" };
+  }
+
+  function loadData(isBackgroundRefresh){
+    if (isBackgroundRefresh){ state.stale = true; render(); }
+    // The "Config" tab is optional (may not exist yet) — a failure there must never block
+    // loading the case data itself, so it gets its own catch that falls back to "no config".
+    var configPromise = loadSheetTabViaJsonp(TAB_CONFIG).catch(function(){ return []; });
+    return Promise.all([ loadSheetTabViaJsonp(TAB_A), loadSheetTabViaJsonp(TAB_B), configPromise ])
+      .then(function(results){
+        var entries = buildKnowledgeBase(results[0], results[1]);
+        var cfg = parseConfigTable(results[2] || []);
+        state.menu = { categoryRename:cfg.categoryRename, categoryOrder:cfg.categoryOrder, deptRename:cfg.deptRename, deptOrder:cfg.deptOrder };
+        state.hashtags = { customTags:cfg.customTags, hiddenAuto:cfg.hiddenAuto };
+        if (entries.length){
+          state.entries = entries;
+          var derived = applyMenuConfig(deriveCategoriesAndDepts(entries));
+          state.categories = derived.categories;
+          state.departments = derived.departments;
+          state.load = "ready";
+          state.errorInfo = null;
+        } else if (!state.entries.length){
+          state.load = "error";
+          state.errorInfo = describeLoadError(new Error("ไม่พบแถวข้อมูลที่ตรงกับรูปแบบที่คาดไว้"));
+        }
+        state.stale = false;
+        state.lastSyncedAt = Date.now();
+        render();
+      })
+      .catch(function(err){
+        state.stale = false;
+        state.errorInfo = describeLoadError(err);
+        if (!state.entries.length) state.load = "error";
+        render();
+      });
+  }
+
+  function init(){
+    render();
+    loadData(false);
+    refreshTimer = setInterval(function(){ loadData(true); }, REFRESH_MS);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
