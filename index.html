@@ -140,7 +140,18 @@
   .chip.active{background:var(--info-soft); border-color:var(--info); color:var(--info); font-weight:600;}
   .toggle{display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;}
   .toggle input{accent-color:var(--accent); width:15px; height:15px;}
-  .clear-filters{font-size:12px; color:var(--info); background:none; border:none; cursor:pointer; padding:0; text-align:left;}
+
+  .active-filter-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:var(--warn-soft); border:1px solid var(--warn); border-radius:10px;
+    padding:10px 14px; margin-bottom:14px; font-size:13px; color:var(--ink);
+  }
+  .active-filter-text{font-weight:600;}
+  .clear-filters-btn{
+    font-size:12.5px; font-weight:700; color:var(--accent-ink); background:var(--warn);
+    border:none; border-radius:999px; padding:7px 16px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .clear-filters-btn:hover{opacity:0.85;}
 
   .results{display:flex; flex-direction:column; gap:10px; min-width:0;}
   .results-head{display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-dim); padding:2px 2px 4px;}
@@ -227,6 +238,11 @@
 
   <div class="stats-row" id="statsRow"></div>
 
+  <div class="active-filter-bar" id="filterClearWrap" style="display:none;">
+    <span class="active-filter-text" id="activeFilterText"></span>
+    <button class="clear-filters-btn" id="clearFilters">✕ ล้างตัวกรองทั้งหมด</button>
+  </div>
+
   <div class="layout">
     <aside class="sidebar">
       <div class="filter-group" id="categoryFilterGroup">
@@ -239,9 +255,6 @@
       </div>
       <div class="filter-group">
         <label class="toggle"><input type="checkbox" id="unresolvedOnly"/> เฉพาะที่ยังไม่มีแนวทางแก้ไข</label>
-      </div>
-      <div class="filter-group" id="filterClearWrap" style="display:none;">
-        <button class="clear-filters" id="clearFilters">✕ ล้างตัวกรองทั้งหมด</button>
       </div>
     </aside>
 
@@ -495,6 +508,7 @@
       unresolvedOnly: document.getElementById("unresolvedOnly"),
       clearFiltersWrap: document.getElementById("filterClearWrap"),
       clearFilters: document.getElementById("clearFilters"),
+      activeFilterText: document.getElementById("activeFilterText"),
       resultsBody: document.getElementById("resultsBody"),
       resultsCount: document.getElementById("resultsCount"),
       detailPane: document.getElementById("detailPane"),
@@ -690,6 +704,10 @@
           return; // คลิกซ้ำในเวลาสั้นๆ ที่หมวดเดิม — เมินไป ไม่ให้ยกเลิกตัวกรองที่เพิ่งเลือก
         }
         lastCategoryClick = { key: key, ts: now };
+        // เคลียร์คำค้นหาที่พิมพ์ค้างไว้ทุกครั้งที่เลือกหมวดหมู่ — ไม่งั้นคำค้นหาเก่าจะไป AND
+        // กับหมวดที่เพิ่งกด ทำให้เจอ 0 เคส ทั้งที่หมวดนั้นมีข้อมูลจริง (ดูเหมือนกดแล้ว "ไม่เจอข้อมูล")
+        state.query = "";
+        E.searchInput.value = "";
         state.activeCategory = (String(state.activeCategory) === key) ? null : key;
         render();
       });
@@ -711,6 +729,8 @@
           return;
         }
         lastDeptClick = { key: dept, ts: now };
+        state.query = "";
+        E.searchInput.value = "";
         state.activeDept = (state.activeDept === dept) ? null : dept;
         render();
       });
@@ -718,8 +738,17 @@
   }
 
   function renderClearFilters(){
-    var any = state.activeCategory || state.activeDept || state.unresolvedOnly || state.query;
+    var parts = [];
+    if (state.query) parts.push('คำค้นหา "' + state.query.replace(/^#/, "") + '"');
+    if (state.activeCategory){
+      var cat = state.categories.filter(function(c){ return String(c.key) === String(state.activeCategory); })[0];
+      parts.push('หมวด "' + (cat ? (cat.displayName || cat.name) : state.activeCategory) + '"');
+    }
+    if (state.activeDept) parts.push('หน่วยงาน "' + displayDeptName(state.activeDept) + '"');
+    if (state.unresolvedOnly) parts.push('เฉพาะที่ยังไม่มีแนวทางแก้ไข');
+    var any = parts.length > 0;
     E.clearFiltersWrap.style.display = any ? "" : "none";
+    if (any) E.activeFilterText.textContent = "กำลังกรอง: " + parts.join(" • ");
   }
 
   function skeletonCards(n){
