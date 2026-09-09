@@ -348,14 +348,28 @@
     return -1;
   }
   function parseSchemaA(allRows){
-    var headerIdx = findHeaderIndex(allRows, ["No.","อันดับหมวด"]);
+    // NOTE: do NOT require "No." here. When this tab has a merged title row above the real
+    // header, Google's gviz "headers=1" mode consumes only that title row into table.cols and
+    // pushes the real header into table.rows — and for columns gviz infers as numeric ("No.",
+    // "อันดับหมวด", "จำนวน Chats"), the header TEXT cell comes back as a null/blank value
+    // (it can't parse "No." as a number), so those tokens are unreliable for locating the
+    // header row. "หัวข้อหลัก"/"หมวดหมู่ย่อย" are text-typed columns and always survive intact.
+    var headerIdx = findHeaderIndex(allRows, ["หัวข้อหลัก","หมวดหมู่ย่อย"]);
     if (headerIdx === -1) return [];
     var header = allRows[headerIdx];
     var idx = function(name){ return header.indexOf(name); };
-    var iRank=idx("อันดับหมวด"), iMain=idx("หัวข้อหลัก"), iSub=idx("หมวดหมู่ย่อย"),
-        iCount=idx("จำนวน Chats"), iCase=idx("รายละเอียด/เคสตัวอย่าง"),
+    var iMain=idx("หัวข้อหลัก"), iSub=idx("หมวดหมู่ย่อย"),
+        iCase=idx("รายละเอียด/เคสตัวอย่าง"),
         iSol1=idx("แนวทางแก้ปัญหา 1"), iSol2=idx("แนวทางแก้ปัญหา 2"),
         iDept=idx("หน่วยงานที่รับผิดชอบ"), iResolved=idx("มีแนวทางแก้ไข?");
+    // "อันดับหมวด" and "จำนวน Chats" sit in numeric-typed columns whose header text can be
+    // blanked by the gviz quirk above. Fall back to their fixed position relative to the
+    // reliably-found "หัวข้อหลัก"/"หมวดหมู่ย่อย" columns (อันดับหมวด is always the column right
+    // before หัวข้อหลัก, and จำนวน Chats is always the column right after หมวดหมู่ย่อย).
+    var iRank = idx("อันดับหมวด");
+    if (iRank === -1 && iMain > 0) iRank = iMain - 1;
+    var iCount = idx("จำนวน Chats");
+    if (iCount === -1 && iSub > -1) iCount = iSub + 1;
     var out=[], curRank=null, curMain=null, curCount=null;
     for (var r=headerIdx+1;r<allRows.length;r++){
       var cells = allRows[r];
