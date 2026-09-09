@@ -654,7 +654,10 @@
       var hidden = state.hashtags.hiddenAuto || [];
       if (hidden.indexOf(lower) !== -1 || hidden.indexOf(full.toLowerCase()) !== -1) return;
       seen[lower] = true;
-      tags.push({ label:label, query:label });
+      // ค้นหาด้วยชื่อเต็ม (ไม่ตัดทอน) เสมอ — label ที่โชว์บนชิปตัดสั้นได้ (ใส่ "…" ก็ได้)
+      // แต่ถ้าเอา label (ที่มี "…") ไปใช้เป็นคำค้นหาด้วย จะหาไม่เจอเคสไหนเลย เพราะ
+      // ข้อความจริงในชีตไม่มีตัวอักษร "…" อยู่ — นี่คือสาเหตุที่กด #แท็กชื่อยาวๆ แล้วได้ 0 เคสที่พบ
+      tags.push({ label:label, query:full });
     });
     (state.hashtags.customTags||[]).forEach(function(t){
       if (!t || !t.label) return;
