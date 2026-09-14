@@ -669,9 +669,23 @@
     return s;
   }
 
+  // จำนวนชิป #Hashtag สูงสุดที่โชว์แถวบนสุด — ถ้าหมวดหมู่หลัก + Hashtag ที่เพิ่มเองในแท็บ Config
+  // รวมกันเกินจำนวนนี้ ส่วนที่เกินจะถูกตัดไม่แสดง (ดู renderTagRow ด้านล่าง)
+  var MAX_TAG_CHIPS = 24;
+
   function renderTagRow(){
     var seen = {};
     var tags = []; // {label, query}
+    // Hashtag ที่เพิ่มเองในแท็บ Config ใส่ก่อนเสมอ — กันไม่ให้ถูกหมวดหมู่หลัก (ที่สร้างแท็กอัตโนมัติ
+    // ให้เองอยู่แล้วทุกหมวด) แย่งที่จนหลุดจากจำนวนสูงสุดที่โชว์ได้ (เคยเกิดปัญหานี้: เพิ่ม Hashtag
+    // ใหม่ในชีตแล้วไม่ขึ้นเว็บ เพราะคิวเต็มจากหมวดหมู่ไปก่อนแล้ว)
+    (state.hashtags.customTags||[]).forEach(function(t){
+      if (!t || !t.label) return;
+      var lower = t.label.toLowerCase();
+      if (seen[lower]) return;
+      seen[lower] = true;
+      tags.push({ label:t.label, query: t.query || t.label });
+    });
     state.categories.forEach(function(c){
       var full = (c.displayName || c.name || "");
       var label = shortTagLabel(full);
@@ -687,14 +701,7 @@
       // ข้อความจริงในชีตไม่มีตัวอักษร "…" อยู่ — นี่คือสาเหตุที่กด #แท็กชื่อยาวๆ แล้วได้ 0 เคสที่พบ
       tags.push({ label:label, query:full });
     });
-    (state.hashtags.customTags||[]).forEach(function(t){
-      if (!t || !t.label) return;
-      var lower = t.label.toLowerCase();
-      if (seen[lower]) return;
-      seen[lower] = true;
-      tags.push({ label:t.label, query: t.query || t.label });
-    });
-    tags = tags.slice(0, 16);
+    tags = tags.slice(0, MAX_TAG_CHIPS);
     if (!tags.length){ E.tagRow.innerHTML = ""; return; }
     E.tagRow.innerHTML = tags.map(function(t){
       var active = state.query && state.query.replace(/^#/,"").trim().toLowerCase() === String(t.query).toLowerCase();
